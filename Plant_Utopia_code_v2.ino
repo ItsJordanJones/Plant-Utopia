@@ -39,11 +39,10 @@ static int interval = codePause; // static as this value never changes
 static int timeForPump = secondsForWaterpumpActive; // static as this value never changes
 int water_level_sc_val = 0;
 
-// Function gets the user input from the Serial monitor
-char* serialString()
+char* serialString() // Function gets the user input from the Serial monitor
 {
   static char str[4]; // String array only allows 3 characters which is what we only require as our command is 'run'
-  if(!Serial.available()) return NULL; // Checks to see if there is any bytes available, if not then return null (move onto next iteration of loop)
+  if(!Serial.available()) return NULL; // Checks to see if there is any bytes available, if not then return null (move onto next iteration of arduino loop)
   delay(64); // Wait for all characters to arrive
   memset(str,0,sizeof(str)); // Set block of memory for str to 0
   byte count=0;
@@ -60,10 +59,9 @@ char* serialString()
   return str;
 }
 
-// Begin serial to access serial monitor & set pin modes for water pumps to OUTPUT
 void setup() 
 {
-  Serial.begin(9600);
+  Serial.begin(9600); // Begin serial to access serial monitor
   delay(1500); // Initial delay on running code
   pinMode(water_pump_bc, OUTPUT); // Set pinMode to OUTPUT as we want to provide power to the water pump when required in our loop
   pinMode(water_pump_sc, OUTPUT); // Set pinMode to OUTPUT as we want to provide power to the water pump when required in our loop
@@ -71,12 +69,12 @@ void setup()
 
 void loop() 
 {
-  delay(interval*1000);
-  Serial.println("\n\n"); // Delay between each code loop
+  delay(interval*1000); // Delay between each code loop
+  Serial.println("\n\n");
   waterLevelbc = analogRead(water_level_bc);
   waterLevelsc = analogRead(water_level_sc);
   moisture = analogRead(soil_sensor);
-  moisture = map(moisture, 0, 1023, 0, 100); // Get value of moisture as a value between 0 - 100 to resemble percentage
+  moisture = map(moisture, 0, 1023, 0, 100); // Get value of moisture sensor and change it between 0 - 100 to resemble percentage
   DHT.read11(temperature_sensor);
   humidity = DHT.humidity;
   temperature = DHT.temperature;
@@ -100,9 +98,8 @@ void loop()
   Serial.print(moisture);
   Serial.println("\n\n");
   delay(1000);
-  char* userInput = serialString();
-  // We check to see if user has typed 'run', if they have & there is enough water, run water pump code
-  if(userInput != NULL && String(userInput) == "run" && waterLevelbc >= 640)
+  char* userInput = serialString(); // This checks to see if user has type anything in serial
+  if(userInput != NULL && String(userInput) == "run" && waterLevelbc >= 640) // We check to see if user has typed 'run', if they have & there is enough water, run water pump code
   {
     Serial.println("\n\n");
     Serial.println("You have entered the run command for watering plant!");
@@ -116,23 +113,24 @@ void loop()
     Serial.println("Finished");
     delay(3000);
     water_level_sc_val = analogRead(water_level_sc);
-    // Check to see if small container has too much water, if so, recycle the water back into main water storage
-    if(water_level_sc_val >= 447) 
+    if(water_level_sc_val >= 447) // Check to see if small container has too much water, if so, recycle the water back into main water container
     {
       Serial.println("Restoring water to water container...");
       digitalWrite(water_pump_sc, 255);
       delay(35000);
-      digitalWrite(water_pump_sc,0); 
+      digitalWrite(water_pump_sc,0);
+      Serial.println("Restoring of water has been complete!"); 
     }
     else 
     {
-      // This is for debugging purposes! Not really necessary to print
-      Serial.println("Not enough water!! Fill the small container!!");
+      // This is for debugging purposes, not really necessary to print but it's just so we know the water is below the threshold
+      Serial.println("Water has not reached threshold yet");
     }
   }
-  else if(waterLevelbc < 640)
+  
+  if(waterLevelbc < 640)
   {
-    // We know that there is not enough water to so we notify the user to add more water
+    // We know that there is not enough water in water container so we notify the user to add more water
     Serial.println("Not enough water, please add more water!\n\n");
   }
 }
