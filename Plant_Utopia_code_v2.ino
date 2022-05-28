@@ -4,13 +4,19 @@
 |  __/| |    |  _  || . ` | | |   | | | | | | | | | |  __/  | | |  _  |
 | |   | |____| | | || |\  | | |   | |_| | | | \ \_/ / |    _| |_| | | |
 \_|   \_____/\_| |_/\_| \_/ \_/    \___/  \_/  \___/\_|    \___/\_| |_/
-                                                           Version: 2.0 
+Github: https://github.com/Jord-J/Plant-Utopia             Version: 2.0 
 */
-// Note: Bluetooth module only requires prints to Serial, we plug RX pin on bluetooth module to TX on arduino so it mimics the arduino Serial (displays on phone without unecessary code!)
-// Includes
-#include <dht.h>
 
-// Defines - these are the pin allocations for the signal (possibly power) of the sensors/water pump
+// -- NOTE: Bluetooth module only requires prints to Serial, we plug RX pin on bluetooth module to TX on arduino so it mimics the arduino
+// -- NOTE: In order to run this code you need to include the library for DHT which is also included on the github repository
+// Below are the applications we used for showcasing purposes for the bluetooth
+// IOS: https://apps.apple.com/gb/app/blexar/id1439459314
+// Google Play:
+
+// Includes
+#include <dht.h> // The library for this can be found on the github repository https://github.com/Jord-J/Plant-Utopia
+
+// Defines - these are the pin allocations for the sensors/water pump
 #define temperature_sensor A0
 #define soil_sensor A1
 #define water_level_bc A2
@@ -19,8 +25,8 @@
 #define water_pump_sc 8
 
 // Testing defines *** ONLY CHANGE THESE PARAMETERS ***
-#define codePause 10 // Delay between each code loop
-#define secondsForWaterpumpActive 5 // The time the water pump is active
+#define codePause 10 // Delay between each code loop (seconds)
+#define secondsForWaterpumpActive 5 // The time the water pump is active (seconds)
 
 // Initialisers
 dht DHT;
@@ -29,28 +35,28 @@ float temperature = 0;
 int moisture = 0;
 int waterLevelbc = 0;
 int waterLevelsc = 0;
-static int interval = codePause;
-static int timeForPump = secondsForWaterpumpActive;
+static int interval = codePause; // static as this value never changes
+static int timeForPump = secondsForWaterpumpActive; // static as this value never changes
 int water_level_sc_val = 0;
 
 // Function gets the user input from the Serial monitor
 char* serialString()
 {
-  static char str[4];
-  if(!Serial.available()) return NULL;
-  delay(64);
-  memset(str,0,sizeof(str));
+  static char str[4]; // String array only allows 3 characters which is what we only require as our command is 'run'
+  if(!Serial.available()) return NULL; // Checks to see if there is any bytes available, if not then return null (move onto next iteration of loop)
+  delay(64); // Wait for all characters to arrive
+  memset(str,0,sizeof(str)); // Set block of memory for str to 0
   byte count=0;
   while(Serial.available())
   {
-    char c=Serial.read();
+    char c=Serial.read(); // Reads the first byte from the buffer and removes that byte from the buffer
     if (c>=32 && count<sizeof(str)-1)
     {
-      str[count]=c;
+      str[count]=c; // Assign the byte to String based on count
       count++;
     }
   }
-  str[count]='\0';
+  str[count]='\0'; // \0 is known as null character, acts as a string terminator (standard C strings are null-terminated)
   return str;
 }
 
@@ -58,9 +64,9 @@ char* serialString()
 void setup() 
 {
   Serial.begin(9600);
-  delay(1500);
-  pinMode(water_pump_bc, OUTPUT);
-  pinMode(water_pump_sc, OUTPUT);
+  delay(1500); // Initial delay on running code
+  pinMode(water_pump_bc, OUTPUT); // Set pinMode to OUTPUT as we want to provide power to the water pump when required in our loop
+  pinMode(water_pump_sc, OUTPUT); // Set pinMode to OUTPUT as we want to provide power to the water pump when required in our loop
 }
 
 void loop() 
@@ -96,7 +102,7 @@ void loop()
   delay(1000);
   char* userInput = serialString();
   // We check to see if user has typed 'run', if they have & there is enough water, run water pump code
-  if(userInput != NULL && String(userInput) == "run" && waterLevelbc > 640)
+  if(userInput != NULL && String(userInput) == "run" && waterLevelbc >= 640)
   {
     Serial.println("\n\n");
     Serial.println("You have entered the run command for watering plant!");
@@ -124,7 +130,7 @@ void loop()
       Serial.println("Not enough water!! Fill the small container!!");
     }
   }
-  else
+  else if(waterLevelbc < 640)
   {
     // We know that there is not enough water to so we notify the user to add more water
     Serial.println("Not enough water, please add more water!\n\n");
